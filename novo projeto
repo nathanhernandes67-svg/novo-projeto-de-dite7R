@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de QR Code</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+
+        .input-group {
+            margin-bottom: 30px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            color: #555;
+            font-weight: 600;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .qr-container {
+            text-align: center;
+            margin: 30px 0;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #qrcode {
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            display: inline-block;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            display: none;
+            margin: 0 auto;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .download-btn:active {
+            transform: translateY(0);
+        }
+
+        .error {
+            color: #e74c3c;
+            text-align: center;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        .info {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Gerador de QR Code</h1>
+        
+        <div class="input-group">
+            <label for="uri-input">Cole a URI aqui:</label>
+            <input type="text" id="uri-input" placeholder="https://exemplo.com ou qualquer URI..." autofocus>
+        </div>
+
+        <div class="qr-container">
+            <div id="qrcode"></div>
+        </div>
+
+        <button class="download-btn" onclick="downloadQR()">📥 Download PNG</button>
+        
+        <div class="error" id="error"></div>
+        
+        <div class="info">
+            Digite qualquer texto ou URL para gerar instantaneamente seu QR Code
+        </div>
+    </div>
+
+    <script>
+        let currentQR = null;
+
+        // Função para gerar o QR Code
+        function generateQRCode(text) {
+            const errorDiv = document.getElementById('error');
+            const downloadBtn = document.querySelector('.download-btn');
+            const qrcodeDiv = document.getElementById('qrcode');
+
+            // Limpa QR Code anterior
+            qrcodeDiv.innerHTML = '';
+
+            if (!text.trim()) {
+                errorDiv.textContent = '';
+                downloadBtn.style.display = 'none';
+                return;
+            }
+
+            // Remove mensagem de erro anterior
+            errorDiv.textContent = '';
+
+            // Gera novo QR Code
+            QRCode.toCanvas(text, {
+                width: 200,
+                margin: 2,
+                color: {
+                    dark: '#000000',
+                    light: '#ffffff'
+                },
+                errorCorrectionLevel: 'M'
+            }, function (error, canvas) {
+                if (error) {
+                    errorDiv.textContent = 'Erro ao gerar QR Code: ' + error.message;
+                    downloadBtn.style.display = 'none';
+                    return;
+                }
+
+                // Adiciona o canvas ao container
+                qrcodeDiv.appendChild(canvas);
+                currentQR = canvas;
+                downloadBtn.style.display = 'block';
+            });
+        }
+
+        // Função para download do QR Code
+        function downloadQR() {
+            if (!currentQR) return;
+
+            // Cria um canvas temporário com fundo branco
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const padding = 40;
+            
+            canvas.width = currentQR.width + padding * 2;
+            canvas.height = currentQR.height + padding * 2;
+            
+            // Fundo branco
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Desenha o QR Code
+            ctx.drawImage(currentQR, padding, padding);
+            
+            // Cria link de download
+            const link = document.createElement('a');
+            link.download = 'qrcode.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        // Event listener para entrada em tempo real
+        document.getElementById('uri-input').addEventListener('input', function(e) {
+            generateQRCode(e.target.value);
+        });
+
+        // Permite colar com Ctrl+V ou Cmd+V
+        document.addEventListener('paste', function(e) {
+            setTimeout(() => {
+                const input = document.getElementById('uri-input');
+                generateQRCode(input.value);
+            }, 10);
+        });
+    </script>
+</body>
+</html>
